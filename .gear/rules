@@ -1,0 +1,3 @@
+tar: freelan
+copy: *.service
+copy: *.init

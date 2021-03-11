@@ -1,0 +1,13 @@
+[Unit]
+Description=Freelan P2P VPN daemon
+Documentation=man:freelan(1)
+After=network.target
+Wants=network.target
+
+[Service]
+Type=forking
+PIDFile=/run/freelan.pid
+ExecStart=/usr/bin/freelan -p /run/freelan.pid
+
+[Install]
+WantedBy=multi-user.target

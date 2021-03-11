@@ -1,0 +1,103 @@
+#!/bin/sh
+# chkconfig: 35 98 02
+# description: A highly-secure peer-to-peer VPN client that works on all
+#              operating systems.
+# processname: freelan
+# config: /etc/freelan/freelan.cfg
+# pidfile: /var/run/freelan.pid
+
+# Author: Julien Kauffmann <julien.kauffmann@freelan.org>
+# Author: Sebastien Vincent <sebastien.vincent@freelan.org>
+# Changed by: Nikolay Burykin <bne@altlinux.org>
+
+# Source function library.
+. /etc/init.d/functions
+
+NAME=freelan
+PIDFILE=/var/run/$NAME.pid
+DAEMON=/usr/bin/$NAME
+CONFIG_DIR=/etc/$NAME
+SCRIPTNAME=/etc/init.d/$NAME
+DAEMON_ARGS="-s"
+CONFIGURATIONS=""
+
+# Exit if the package is not installed
+[ -x $DAEMON ] || exit 0
+
+# General function for start and stop
+check_config()
+{
+	echo "$NAME: No configuration specified. Did you edit /etc/freelan/$NAME.cfg ?"
+}
+
+# Function that starts the daemon/service
+start()
+{
+	if [ "$CONFIGURATIONS" = "" ]; then
+		check_config
+		return 0
+	else
+		for CONFIG in $CONFIGURATIONS; do
+			echo "Starting $NAME instance - $CONFIG"
+			
+			CONFIG_FILE="$CONFIG_DIR/$CONFIG.cfg"
+
+			if test -e "$CONFIG_FILE"; then
+				start_daemon --pidfile $PIDFILE.$CONFIG $DAEMON \
+					$DAEMON_ARGS -c $CONFIG_FILE
+			else
+				echo "$CONFIG_FILE not found"
+				return 2
+			fi
+		done
+	fi
+}
+
+# Function that stops the daemon/service
+stop()
+{
+	if [ "$CONFIGURATIONS" = "" ]; then
+		check_config
+		return 0
+	else
+		for CONFIG in $CONFIGURATIONS; do
+			echo -n "Stopping $NAME instance - $CONFIG."
+
+			CONFIG_FILE="$CONFIG_DIR/$CONFIG.cfg"
+
+			if test -e "$CONFIG_FILE"; then
+				stop_daemon --pidfile "$PIDFILE" --lockfile "$LOCKFILE"
+				rm -f $PIDFILE.$CONFIG
+			fi
+		done
+	fi
+}
+
+# Function that sends a SIGNUP to the daemon/service
+reload()
+{
+	stop
+	start
+}
+
+# See how we were called.
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart|reload)
+		reload
+		;;
+	status)
+		status $DAEMON
+		;;
+	*)
+		echo "Usage: $SCRIPTNAME {start|stop|status|restart|reload}" >&2
+		exit 1
+		;;
+esac
+
+exit $?
